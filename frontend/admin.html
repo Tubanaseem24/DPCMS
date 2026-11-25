@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DPCMS — Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; }
+
+        .navbar {
+            background: #1e293b;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+
+        .navbar h1 { color: #f59e0b; font-size: 20px; }
+        .logout { background: #dc2626; color: white; border: none;
+                  padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+
+        .container { max-width: 1200px; margin: 32px auto; padding: 0 24px; }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 12px;
+        }
+
+        .tab {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            background: #1e293b;
+            color: #94a3b8;
+            transition: all 0.2s;
+        }
+
+        .tab.active { background: #2563eb; color: white; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+
+        .card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #334155;
+            text-align: center;
+        }
+
+        .card h3 { color: #94a3b8; font-size: 12px; margin-bottom: 8px; }
+        .card .number { font-size: 28px; font-weight: 700; color: #f59e0b; }
+
+        .section { background: #1e293b; border-radius: 12px;
+                   padding: 24px; border: 1px solid #334155; margin-bottom: 20px; }
+
+        .section h2 { font-size: 15px; margin-bottom: 16px; color: #e2e8f0; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 10px 12px; color: #64748b;
+             border-bottom: 1px solid #334155; font-weight: 500; }
+        td { padding: 12px; border-bottom: 1px solid #1e293b; color: #cbd5e1; }
+        tr:hover td { background: #0f172a; }
+
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+        .badge-critical { background: #7f1d1d; color: #fca5a5; }
+        .badge-high { background: #7c2d12; color: #fdba74; }
+        .badge-medium { background: #1e3a5f; color: #93c5fd; }
+        .badge-low { background: #14532d; color: #86efac; }
+        .badge-granted { background: #14532d; color: #86efac; }
+        .badge-pending { background: #713f12; color: #fde68a; }
+        .badge-completed { background: #1e3a5f; color: #93c5fd; }
+        .badge-withdrawn { background: #3b0764; color: #d8b4fe; }
+
+        .btn-action {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-complete {
+            background: #16a34a;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #166534;
+            color: #bbf7d0;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>⚙️ DPCMS — Admin Panel</h1>
+    <div>
+        <span id="adminName" style="color:#94a3b8; font-size:14px; margin-right:16px"></span>
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Stats -->
+    <div class="cards">
+        <div class="card">
+            <h3>Total Users</h3>
+            <div class="number" id="totalUsers">0</div>
+        </div>
+        <div class="card">
+            <h3>Active Consents</h3>
+            <div class="number" id="totalConsents">0</div>
+        </div>
+        <div class="card">
+            <h3>Pending DSR</h3>
+            <div class="number" id="pendingDSR">0</div>
+        </div>
+        <div class="card">
+            <h3>High Risk Users</h3>
+            <div class="number" id="highRisk">0</div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('users')">👥 Users</button>
+        <button class="tab" onclick="showTab('consents')">📋 Consents</button>
+        <button class="tab" onclick="showTab('dsr')">⚖️ DSR Requests</button>
+        <button class="tab" onclick="showTab('risk')">🎯 Risk Scores</button>
+        <button class="tab" onclick="showTab('categories')">🗂️ Categories</button>
+    </div>
+
+    <!-- Users Tab -->
+    <div class="tab-content active" id="tab-users">
+        <div class="section">
+            <h2>All Users</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th><th>Name</th><th>Email</th>
+                        <th>Country</th><th>Role</th><th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Consents Tab -->
+    <div class="tab-content" id="tab-consents">
+        <div class="section">
+            <h2>All Active Consents</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th><th>Category</th><th>Sensitivity</th>
+                        <th>Policy</th><th>Status</th><th>Method</th><th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="consentsTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- DSR Tab -->
+    <div class="tab-content" id="tab-dsr">
+        <div class="section">
+            <h2>All DSR Requests</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th><th>Type</th><th>Status</th>
+                        <th>Submitted</th><th>Notes</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="dsrTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Risk Tab -->
+    <div class="tab-content" id="tab-risk">
+        <div class="section">
+            <h2>User Risk Scores</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>User</th><th>Risk Level</th><th>Total Score</th>
+                        <th>Critical</th><th>High</th><th>Medium</th><th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody id="riskTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Categories Tab -->
+    <div class="tab-content" id="tab-categories">
+        <div class="section">
+            <h2>Data Categories</h2>
+            <table>
+                <thead>
+                    <tr><th>ID</th><th>Name</th><th>Description</th><th>Sensitivity</th></tr>
+                </thead>
+                <tbody id="categoriesTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    const API = 'http://localhost:8081';
+    const user = JSON.parse(localStorage.getItem('dpcms_user'));
+    if (!user) window.location.href = 'index.html';
+    document.getElementById('adminName').textContent = user.fullName + ' (' + user.role + ')';
+
+    function showTab(name) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    async function loadAll() {
+        await loadUsers();
+        await loadConsents();
+        await loadDSR();
+        await loadRisk();
+        await loadCategories();
+    }
+
+    async function loadUsers() {
+        const res = await fetch(`${API}/api/users`);
+        const users = await res.json();
+        document.getElementById('totalUsers').textContent = users.length;
+        let html = '';
+        users.forEach(u => {
+            html += `<tr>
+                <td>${u.userId}</td>
+                <td>${u.fullName}</td>
+                <td>${u.email}</td>
+                <td>${u.country || '—'}</td>
+                <td><span class="badge badge-medium">${u.role}</span></td>
+                <td><span class="badge ${u.isDeleted ? 'badge-critical' : 'badge-granted'}">
+                    ${u.isDeleted ? 'Deleted' : 'Active'}</span></td>
+            </tr>`;
+        });
+        document.getElementById('usersTable').innerHTML = html;
+    }
+
+    async function loadConsents() {
+        const res = await fetch(`${API}/api/consents/active`);
+        const consents = await res.json();
+        document.getElementById('totalConsents').textContent = consents.length;
+        let html = '';
+        consents.forEach(c => {
+            const sens = c.category.sensitivity.toLowerCase();
+            html += `<tr>
+                <td>${c.user.fullName}</td>
+                <td>${c.category.name}</td>
+                <td><span class="badge badge-${sens}">${c.category.sensitivity}</span></td>
+                <td>${c.policy.title}</td>
+                <td><span class="badge badge-granted">${c.status}</span></td>
+                <td>${c.consentMethod}</td>
+                <td>${new Date(c.grantedAt).toLocaleDateString()}</td>
+            </tr>`;
+        });
+        document.getElementById('consentsTable').innerHTML = html;
+    }
+
+    async function loadDSR() {
+        const res = await fetch(`${API}/api/dsr`);
+        const requests = await res.json();
+        const pending = requests.filter(r => r.status === 'PENDING').length;
+        document.getElementById('pendingDSR').textContent = pending;
+        let html = '';
+        requests.forEach(r => {
+            const statusClass = r.status === 'COMPLETED' ? 'badge-completed' :
+                                r.status === 'PENDING' ? 'badge-pending' : 'badge-medium';
+            html += `<tr>
+                <td>${r.user.fullName}</td>
+                <td>${r.requestType}</td>
+                <td><span class="badge ${statusClass}">${r.status}</span></td>
+                <td>${new Date(r.submittedAt).toLocaleDateString()}</td>
+                <td>${r.notes || '—'}</td>
+                <td>${r.status === 'PENDING' ?
+                    `<button class="btn-complete" onclick="completeRequest(${r.requestId})">Complete</button>` :
+                    '—'}</td>
+            </tr>`;
+        });
+        document.getElementById('dsrTable').innerHTML = html;
+    }
+
+    async function loadRisk() {
+        const res = await fetch(`${API}/api/risk`);
+        const scores = await res.json();
+        const high = scores.filter(s => s.riskLevel === 'HIGH' || s.riskLevel === 'CRITICAL').length;
+        document.getElementById('highRisk').textContent = high;
+        let html = '';
+        scores.forEach(s => {
+            const lvl = s.riskLevel.toLowerCase();
+            html += `<tr>
+                <td>${s.user.fullName}</td>
+                <td><span class="badge badge-${lvl === 'critical' || lvl === 'high' ? 'critical' : 'medium'}">${s.riskLevel}</span></td>
+                <td>${s.totalScore}</td>
+                <td>${s.criticalConsents}</td>
+                <td>${s.highConsents}</td>
+                <td>${s.mediumConsents}</td>
+                <td>${new Date(s.lastCalculated).toLocaleDateString()}</td>
+            </tr>`;
+        });
+        document.getElementById('riskTable').innerHTML = html;
+    }
+
+    async function loadCategories() {
+        const res = await fetch(`${API}/api/categories`);
+        const cats = await res.json();
+        let html = '';
+        cats.forEach(c => {
+            const sens = c.sensitivity.toLowerCase();
+            html += `<tr>
+                <td>${c.categoryId}</td>
+                <td>${c.name}</td>
+                <td>${c.description}</td>
+                <td><span class="badge badge-${sens}">${c.sensitivity}</span></td>
+            </tr>`;
+        });
+        document.getElementById('categoriesTable').innerHTML = html;
+    }
+
+    async function completeRequest(requestId) {
+        await fetch(`${API}/api/dsr/${requestId}/status?status=COMPLETED&handledBy=${user.email}`, {
+            method: 'PUT'
+        });
+        showToast('DSR Request marked as completed!');
+        loadDSR();
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = '✅ ' + msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function logout() {
+        localStorage.removeItem('dpcms_user');
+        window.location.href = 'index.html';
+    }
+
+    loadAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DPCMS — My Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; }
+
+        .navbar {
+            background: #1e293b;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+
+        .navbar h1 { color: #60a5fa; font-size: 20px; }
+        .navbar span { color: #94a3b8; font-size: 14px; }
+        .logout { background: #dc2626; color: white; border: none;
+                  padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+
+        .container { max-width: 1100px; margin: 32px auto; padding: 0 24px; }
+
+        .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+
+        .card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid #334155;
+        }
+
+        .card h3 { color: #94a3b8; font-size: 13px; margin-bottom: 8px; }
+        .card .number { font-size: 32px; font-weight: 700; color: #60a5fa; }
+
+        .section { background: #1e293b; border-radius: 12px;
+                   padding: 24px; border: 1px solid #334155; margin-bottom: 24px; }
+
+        .section h2 { font-size: 16px; margin-bottom: 20px; color: #e2e8f0; }
+
+        .consent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        .consent-item:last-child { border-bottom: none; }
+
+        .consent-info h4 { font-size: 14px; color: #f1f5f9; }
+        .consent-info p { font-size: 12px; color: #64748b; margin-top: 3px; }
+
+        .badge-critical { background: #7f1d1d; color: #fca5a5; padding: 3px 8px;
+                          border-radius: 4px; font-size: 11px; }
+        .badge-high { background: #7c2d12; color: #fdba74; padding: 3px 8px;
+                      border-radius: 4px; font-size: 11px; }
+        .badge-medium { background: #1e3a5f; color: #93c5fd; padding: 3px 8px;
+                        border-radius: 4px; font-size: 11px; }
+        .badge-low { background: #14532d; color: #86efac; padding: 3px 8px;
+                     border-radius: 4px; font-size: 11px; }
+
+        .status-granted { color: #4ade80; font-size: 13px; }
+        .status-withdrawn { color: #f87171; font-size: 13px; }
+        .status-denied { color: #fbbf24; font-size: 13px; }
+
+        .btn-withdraw {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-withdraw:hover { background: #b91c1c; }
+
+        .dsr-form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+
+        select, input {
+            width: 100%;
+            padding: 10px 14px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            color: #f1f5f9;
+            font-size: 13px;
+        }
+
+        label { display: block; color: #94a3b8; font-size: 12px; margin-bottom: 5px; }
+
+        .btn-submit {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .dsr-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #334155;
+            font-size: 13px;
+        }
+
+        .risk-box {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .risk-level {
+            font-size: 42px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .risk-low { color: #4ade80; }
+        .risk-medium { color: #fbbf24; }
+        .risk-high { color: #f97316; }
+        .risk-critical { color: #f87171; }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #166534;
+            color: #bbf7d0;
+            padding: 14px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            display: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>📊 DPCMS — My Dashboard</h1>
+    <div>
+        <span id="username">Loading...</span>
+        <button class="logout" onclick="logout()" style="margin-left:16px">Logout</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- Stats -->
+    <div class="cards">
+        <div class="card">
+            <h3>Active Consents</h3>
+            <div class="number" id="activeCount">0</div>
+        </div>
+        <div class="card">
+            <h3>Withdrawn Consents</h3>
+            <div class="number" id="withdrawnCount">0</div>
+        </div>
+        <div class="card">
+            <h3>DSR Requests</h3>
+            <div class="number" id="dsrCount">0</div>
+        </div>
+    </div>
+
+    <!-- Risk Score -->
+    <div class="section">
+        <h2>🎯 My Privacy Risk Score</h2>
+        <div class="risk-box">
+            <p style="color:#94a3b8; font-size:13px">Based on your active consents</p>
+            <div class="risk-level" id="riskLevel">—</div>
+            <p style="color:#64748b; font-size:12px" id="riskScore"></p>
+        </div>
+    </div>
+
+    <!-- My Consents -->
+    <div class="section">
+        <h2>📋 My Consents</h2>
+        <div id="consentsList">Loading...</div>
+    </div>
+
+    <!-- Submit DSR Request -->
+    <div class="section">
+        <h2>⚖️ Submit a Data Subject Rights Request</h2>
+        <div class="dsr-form">
+            <div>
+                <label>Request Type</label>
+                <select id="dsrType">
+                    <option value="ACCESS">Access — Show me all my data</option>
+                    <option value="DELETE">Delete — Remove all my data</option>
+                    <option value="PORTABILITY">Portability — Export my data</option>
+                    <option value="RECTIFY">Rectify — Fix incorrect data</option>
+                </select>
+            </div>
+            <div>
+                <label>Notes (optional)</label>
+                <input type="text" id="dsrNotes" placeholder="Describe your request..."/>
+            </div>
+            <button class="btn-submit" onclick="submitDSR()">Submit Request</button>
+        </div>
+    </div>
+
+    <!-- My DSR Requests -->
+    <div class="section">
+        <h2>📬 My Requests History</h2>
+        <div id="dsrList">Loading...</div>
+    </div>
+
+</div>
+
+<div class="toast" id="toast">✅ Action completed successfully!</div>
+
+<script>
+    const API = 'http://localhost:8081';
+    const user = JSON.parse(localStorage.getItem('dpcms_user'));
+
+    if (!user) window.location.href = 'index.html';
+
+    document.getElementById('username').textContent = '👤 ' + user.fullName;
+
+    async function loadDashboard() {
+        await loadConsents();
+        await loadDSRRequests();
+        await loadRiskScore();
+    }
+
+    async function loadConsents() {
+        const res = await fetch(`${API}/api/consents/user/${user.userId}`);
+        const consents = await res.json();
+
+        let active = 0, withdrawn = 0;
+        let html = '';
+
+        consents.forEach(c => {
+            if (c.status === 'GRANTED') active++;
+            if (c.status === 'WITHDRAWN') withdrawn++;
+
+            const sens = c.category.sensitivity.toLowerCase();
+            const statusClass = 'status-' + c.status.toLowerCase();
+
+            html += `
+                <div class="consent-item">
+                    <div class="consent-info">
+                        <h4>${c.category.name}
+                            <span class="badge-${sens}">${c.category.sensitivity}</span>
+                        </h4>
+                        <p>Policy: ${c.policy.title} • Method: ${c.consentMethod}</p>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px">
+                        <span class="${statusClass}">${c.status}</span>
+                        ${c.status === 'GRANTED' ?
+                            `<button class="btn-withdraw" onclick="withdraw(${c.consentId})">Withdraw</button>` : ''}
+                    </div>
+                </div>`;
+        });
+
+        document.getElementById('consentsList').innerHTML = html || '<p style="color:#64748b">No consents found.</p>';
+        document.getElementById('activeCount').textContent = active;
+        document.getElementById('withdrawnCount').textContent = withdrawn;
+    }
+
+    async function loadRiskScore() {
+        try {
+            const res = await fetch(`${API}/api/risk/user/${user.userId}`);
+            const risk = await res.json();
+            const level = risk.riskLevel;
+            const el = document.getElementById('riskLevel');
+            el.textContent = level;
+            el.className = 'risk-level risk-' + level.toLowerCase();
+            document.getElementById('riskScore').textContent = 'Total Score: ' + risk.totalScore;
+        } catch {
+            document.getElementById('riskLevel').textContent = 'N/A';
+        }
+    }
+
+    async function loadDSRRequests() {
+        const res = await fetch(`${API}/api/dsr/user/${user.userId}`);
+        const requests = await res.json();
+
+        document.getElementById('dsrCount').textContent = requests.length;
+
+        let html = '';
+        requests.forEach(r => {
+            html += `
+                <div class="dsr-item">
+                    <span>${r.requestType}</span>
+                    <span style="color:#94a3b8">${r.notes || '—'}</span>
+                    <span style="color:${r.status === 'COMPLETED' ? '#4ade80' :
+                                        r.status === 'PENDING' ? '#fbbf24' : '#94a3b8'}">${r.status}</span>
+                    <span style="color:#64748b">${new Date(r.submittedAt).toLocaleDateString()}</span>
+                </div>`;
+        });
+
+        document.getElementById('dsrList').innerHTML = html || '<p style="color:#64748b">No requests submitted yet.</p>';
+    }
+
+    async function withdraw(consentId) {
+        await fetch(`${API}/api/consents/${consentId}/withdraw`, { method: 'PUT' });
+        showToast('Consent withdrawn successfully!');
+        loadDashboard();
+    }
+
+    async function submitDSR() {
+        const type = document.getElementById('dsrType').value;
+        const notes = document.getElementById('dsrNotes').value;
+
+        await fetch(`${API}/api/dsr/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                user: { userId: user.userId },
+                requestType: type,
+                notes: notes
+            })
+        });
+
+        showToast('DSR Request submitted successfully!');
+        loadDSRRequests();
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = '✅ ' + msg;
+        t.style.display = 'block';
+        setTimeout(() => t.style.display = 'none', 3000);
+    }
+
+    function logout() {
+        localStorage.removeItem('dpcms_user');
+        window.location.href = 'index.html';
+    }
+
+    loadDashboard();
+</script>
+</body>
+</html>
